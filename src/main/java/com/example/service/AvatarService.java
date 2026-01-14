@@ -1,43 +1,71 @@
 package com.example.service;
 
+import com.example.entity.Avatar;
+import com.example.entity.Userprofile;
+import com.example.repository.AvatarRepository;
+import com.example.repository.UserprofileRepository;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class AvatarService {
 
+    private final AvatarRepository avatarRepository;
+    private final UserprofileRepository userprofileRepository;
     private final MinioClient minioClient;
 
-    @Value("${minio.bucket}")
-    private String bucket;
+    public AvatarService(AvatarRepository avatarRepository, UserprofileRepository userprofileRepository, MinioClient minioClient) {
+        this.avatarRepository = avatarRepository;
+        this.userprofileRepository = userprofileRepository;
+        this.minioClient = minioClient;
+    }
 
-    public String uploadAvatar(MultipartFile file, String userId) {
-        try {
-            String filename = "avatar-" + userId + "-" + UUID.randomUUID()
-                    + "." + file.getOriginalFilename();
+    public Avatar uploadAvatar(MultipartFile file) throws Exception {
+        // Lấy keycloakId từ Authentication
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String keycloakId = auth.getName();
 
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(filename)
-                            .stream(file.getInputStream(), file.getSize(), -1)
-                            .contentType(file.getContentType())
-                            .build()
-            );
+        Userprofile user = userprofileRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-            return filename;
-        } catch (Exception e) {
-            System.err.println("====== MINIO UPLOAD ERROR ======");
-            e.printStackTrace();
-            throw new RuntimeException(e.getMessage());
-        }
+        // Tạo tên file: username + timestamp + randomUUID
+        String objectName =
+                "avatar/" +
+                        user.getUsername() + "_" +
+                        System.currentTimeMillis() + "_" +
+                        UUID.randomUUID() + ".jpg";
 
+        // Upload lên MinIO
+        minioClient.putObject(
+                PutObjectArgs.builder()
+                        .bucket("thanhnguyen") // tên bucket
+                        .object(objectName)
+                        .stream(file.getInputStream(), file.getSize(), -1)
+                        .contentType(file.getContentType())
+                        .build()
+        );
+
+        // Lưu vào database
+        Avatar avatar = new Avatar();
+        avatar.setUser(user);
+        avatar.setKeycloakId(keycloakId);
+        avatar.setObjectName(objectName);
+        avatar.setContentType(file.getContentType());
+        avatar.setFileSize(file.getSize());
+        avatar.setUpdateAt(LocalDateTime.now());
+        avatar.setIsActive(true);
+
+        // Cập nhật avatarPath hiện tại của user
+        user.setAvatarPath(objectName);
+        userprofileRepository.save(user);
+
+        return avatarRepository.save(avatar);
     }
 }
