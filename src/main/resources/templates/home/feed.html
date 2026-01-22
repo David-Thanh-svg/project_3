@@ -1,0 +1,39 @@
+<form th:action="@{/posts/create}"
+      method="post"
+      enctype="multipart/form-data"
+      style="margin-bottom: 20px">
+
+    <textarea name="content"
+              placeholder="Bạn đang nghĩ gì?"
+              required
+              style="width:100%; height:80px"></textarea>
+
+  <select name="privacy" required>
+    <option value="PUBLIC">Công khai</option>
+    <option value="FRIENDS">Bạn bè</option>
+    <option value="PRIVATE">Chỉ mình tôi</option>
+  </select>
+
+  <input type="file"
+         name="files"
+         multiple />
+
+  <button type="submit">Đăng bài</button>
+
+  <div th:each="post : ${posts}">
+    <h4 th:text="${post.author.username}"></h4>
+    <p th:text="${post.content}"></p>
+
+    <div th:each="m : ${post.media}">
+      <img th:if="${m.type.name() == 'IMAGE'}"
+           th:src="${minio.getPresignedUrl(m.mediaPath)}"
+           width="300"/>
+
+      <video th:if="${m.type.name() == 'VIDEO'}"
+             controls width="300">
+        <source th:src="${minio.getPresignedUrl(m.mediaPath)}"/>
+      </video>
+    </div>
+  </div>
+
+</form>

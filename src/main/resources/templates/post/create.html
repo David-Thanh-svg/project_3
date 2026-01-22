@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="createForm">
+  <form th:action="@{/posts}" method="post" enctype="multipart/form-data">
+    <textarea name="content" placeholder="Bạn đang nghĩ gì?" required></textarea>
+
+    <input type="file" name="mediaFiles" multiple />
+
+    <select name="privacy">
+      <option value="PUBLIC">Công khai</option>
+      <option value="FRIENDS">Bạn bè</option>
+      <option value="PRIVATE">Chỉ mình tôi</option>
+    </select>
+
+    <button type="submit">Đăng</button>
+  </form>
+</div>
+
+</body>
+</html>

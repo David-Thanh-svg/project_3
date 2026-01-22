@@ -1,66 +1,24 @@
 package com.example.service;
 
 import com.example.entity.Post;
-import com.example.entity.Userprofile;
-import com.example.repository.PostRepository;
-import com.example.repository.UserprofileRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Service;
+import com.example.entity.enums.PrivacyLevel;
+import org.springframework.web.multipart.MultipartFile;
 
-@Service
-@RequiredArgsConstructor
-public class PostService {
+import java.util.List;
 
-    private final PostRepository postRepo;
-    private final UserprofileRepository userRepo;
+public interface PostService {
 
-    public Post createPost(String keycloakId, String content) {
+    Post createPost(Long userId, String content,
+                    PrivacyLevel privacy,
+                    List<MultipartFile> files,
+                    List<Long> tagUserIds);
 
-        Userprofile user = userRepo.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    void deletePost(Long postId, Long userId);
 
-        Post post = new Post();
-        post.setUserId(user.getId()); // ✅ BIGINT
-        post.setContent(content);
+    Post repost(Long userId, Long postId, String content);
 
-        return postRepo.save(post);
-    }
+    List<Post> getMyPosts(Long userId);
 
-    public Post updatePost(Long postId, String keycloakId, String content) {
+    List<Post> getFeed(Long viewerId);
 
-        Userprofile user = userRepo.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Post post = postRepo.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-
-        // ✅ LONG - LONG
-        if (!post.getUserId().equals(user.getId())) {
-            throw new AccessDeniedException("Not owner of post");
-        }
-
-        post.setContent(content);
-        return postRepo.save(post);
-    }
-
-    public void deletePost(Long postId, String keycloakId) {
-
-        Userprofile user = userRepo.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Post post = postRepo.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-
-        if (!post.getUserId().equals(user.getId())) {
-            throw new AccessDeniedException("Not owner of post");
-        }
-
-        postRepo.delete(post);
-    }
-
-    public Post getPost(Long id) {
-        return postRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-    }
 }

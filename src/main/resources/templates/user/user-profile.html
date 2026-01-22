@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>User Profile</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card {
+      width: 420px;
+      background: white;
+      padding: 32px;
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+
+    .avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #667eea;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      margin: 8px 0 4px;
+    }
+
+    .username {
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .bio {
+      font-size: 14px;
+      color: #444;
+      margin: 16px 0;
+      padding: 12px;
+      background: #f3f4f6;
+      border-radius: 10px;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 16px 0;
+    }
+
+    .stats div {
+      text-align: center;
+    }
+
+    .stats span {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .public { background: #d1fae5; color: #065f46; }
+    .friends { background: #dbeafe; color: #1e40af; }
+    .private { background: #fee2e2; color: #991b1b; }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-follow {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-unfollow {
+      background: #e5e7eb;
+      color: #333;
+    }
+
+    .btn-upload {
+      background: #10b981;
+      color: white;
+    }
+
+    .back {
+      margin-top: 16px;
+      display: block;
+      text-decoration: none;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- AVATAR -->
+  <img class="avatar"
+       th:src="${avatarUrl != null ? avatarUrl : '/images/default-avatar.png'}"
+       alt="avatar"/>
+
+  <!-- USERNAME -->
+  <h2 th:text="${user.username}">username</h2>
+
+  <!-- PRIVACY -->
+  <div th:class="'badge ' + ${user.privacy.name().toLowerCase()}"
+       th:text="${user.privacy}">
+    PUBLIC
+  </div>
+
+  <!-- BIO -->
+  <div class="bio" th:if="${user.bio != null}" th:text="${user.bio}">
+    Bio here
+  </div>
+
+  <div class="bio" th:if="${user.bio == null}">
+    Chưa có giới thiệu
+  </div>
+
+  <!-- FOLLOW STATS -->
+  <div class="stats">
+    <div>
+      <span th:text="${user.followers.size()}">0</span><br>
+      Followers
+    </div>
+    <div>
+      <span th:text="${user.following.size()}">0</span><br>
+      Following
+    </div>
+  </div>
+
+  <!-- OWNER: UPLOAD AVATAR -->
+  <form th:if="${isOwner}"
+        th:action="@{/user/profile/avatar}"
+        method="post"
+        enctype="multipart/form-data">
+
+    <input type="file" name="avatar" accept="image/*" required>
+    <button class="btn-upload" type="submit">
+      📤 Cập nhật avatar
+    </button>
+  </form>
+
+  <!-- NOT OWNER: FOLLOW -->
+  <a th:if="${isOwner}"
+     th:href="@{/user/edit}"
+     class="back"
+     style="margin-top:10px; display:block;">
+    ✏️ Chỉnh sửa hồ sơ
+  </a>
+
+  <form th:if="${!isOwner}"
+        th:action="@{/user/follow/{id}(id=${user.id})}"
+        method="post">
+
+    <button class="btn-follow" type="submit">
+      ➕ Theo dõi
+    </button>
+  </form>
+
+  <!-- BACK -->
+  <a class="back" th:href="@{/user}">
+    ⬅ Quay lại
+  </a>
+
+</div>
+
+</body>
+</html>

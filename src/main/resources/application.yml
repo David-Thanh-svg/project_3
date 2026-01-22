@@ -1,46 +1,91 @@
 spring:
   application:
-    name: project_3
+    name: project3
 
   servlet:
     multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
+      enabled: true
+      max-file-size: 20MB
+      max-request-size: 20MB
 
   datasource:
-    url: jdbc:mariadb://localhost:3307/social_media
-    username: social
-    password: social
+    url: jdbc:mariadb://103.118.29.245:3306/project3?createDatabaseIfNotExist=true
     driver-class-name: org.mariadb.jdbc.Driver
+    username: appuser
+    password: app_password
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MariaDBDialect
         format_sql: true
 
+  # kafka
+  kafka:
+    bootstrap-servers: 103.118.29.245:9092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+    consumer:
+      group-id:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.example.kafka.event
+
+  # redis
+  data:
+    redis:
+      host: 103.118.29.245
+      port: 6379
+      timeout: 2000
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: hantho1107@gmail.com
+    password: pidz dbgi tkcr caep
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  # security
   security:
     oauth2:
-      resourceserver: {}
-
-# Server
+      client:
+        registration:
+          keycloak:
+            client-id: thanh-api
+            client-secret: oiFQRYAuRwPC085CspA2KKEBiHo57ltA
+            scope: openid, profile, email
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"
+        provider:
+          keycloak:
+            authorization-uri: https://103.118.29.245:8443/realms/thanh/protocol/openid-connect/auth
+            token-uri: https://103.118.29.245:8443/realms/thanh/protocol/openid-connect/token
+            user-info-uri: https://103.118.29.245:8443/realms/thanh/protocol/openid-connect/userinfo
+            jwk-set-uri: https://103.118.29.245:8443/realms/thanh/protocol/openid-connect/certs
+            user-name-attribute: preferred_username
 server:
-  port: 8082
+  port: 8080
 
-# Logging
 logging:
   level:
     org.springframework.security: TRACE
-    org.springframework.web: DEBUG
+    org.springframework.kafka: INFO
 
 minio:
   url: http://103.118.29.245:9000
-  access-key: minioadmin
-  secret-key: minioadmin123
-  bucket:
-    avatar: thanhnguyen
-    media: thanhnguyen
-
+  access-key: wQka8TGMfOWB6d1q31m5
+  secret-key: QqFnkv2KVcQ8SZpn1j4TMNzZ5uTVO942DhLklLOY
+  bucket: thanhnguyen

@@ -19,10 +19,10 @@ public class MinioConfig {
 
     @Bean
     public MinioClient minioClient() {
-        System.out.println(">>> MINIO CLIENT CREATED <<<");
         return MinioClient.builder()
                 .endpoint(url)
                 .credentials(accessKey, secretKey)
                 .build();
     }
 }
+

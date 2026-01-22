@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>User Home</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+<h1>👋 Welcome</h1>
+
+<div class="profile">
+  <!-- AVATAR -->
+  <img
+          th:src="${avatarUrl != null ? avatarUrl : '/images/default-avatar.png'}"
+          alt="avatar"
+          width="120"
+  />
+
+
+
+  <!-- USER INFO -->
+  <div>
+    <p><b>Username:</b> <span th:text="${username}"></span></p>
+    <p><b>Email:</b> <span th:text="${email}"></span></p>
+    <p><b>Roles:</b> <span th:text="${roles}"></span></p>
+  </div>
+</div>
+
+<hr>
+<form th:action="@{/user/home}" method="get">
+  <button type="submit">🏠 User Home</button>
+</form>
+
+
+<!-- LOGOUT -->
+<form th:action="@{/logout}" method="post">
+  <input type="hidden"
+         th:name="${_csrf.parameterName}"
+         th:value="${_csrf.token}" />
+  <button type="submit">🚪 Logout</button>
+</form>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+<div class="post">
+
+  <div>
+    <b th:text="${post.author.username}"></b>
+    <span th:text="${#temporals.format(post.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+  </div>
+
+  <p th:text="${post.content}"></p>
+
+  <!-- Media -->
+  <div th:each="media : ${post.media}">
+    <img th:if="${media.type.name() == 'IMAGE'}"
+         th:src="@{'/media/' + ${media.mediaPath}}"
+         width="300"/>
+
+    <video th:if="${media.type.name() == 'VIDEO'}"
+           controls width="300">
+      <source th:src="@{'/media/' + ${media.mediaPath}}">
+    </video>
+  </div>
+
+  <!-- Tagged users -->
+  <div th:if="${!post.taggedUsers.isEmpty()}">
+    <span>Tag:</span>
+    <span th:each="u : ${post.taggedUsers}"
+          th:text="${u.username}"></span>
+  </div>
+
+  <!-- Repost -->
+  <div th:if="${post.originalPost != null}" class="repost">
+    <small>Chia sẻ từ:</small>
+    <p th:text="${post.originalPost.content}"></p>
+  </div>
+
+  <form th:action="@{/posts/{id}/repost(id=${post.id})}" method="post">
+    <button>Repost</button>
+  </form>
+</div>

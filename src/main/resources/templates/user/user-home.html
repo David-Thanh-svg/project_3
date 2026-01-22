@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>User Home</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: #fff;
+      width: 360px;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 12px;
+      border: 3px solid #667eea;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 8px 0;
+    }
+
+    p {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: 0.2s ease;
+    }
+
+    .btn-profile {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-profile:hover {
+      background: #5a67d8;
+    }
+
+    .btn-logout {
+      background: #f3f4f6;
+      color: #333;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-logout:hover {
+      background: #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Avatar (fallback nếu chưa có) -->
+  <img th:src="${avatarUrl != null ? avatarUrl : '/images/default-avatar.png'}"
+       alt="avatar"
+       width="120">
+
+
+  <h1>
+    👋 Xin chào,
+    <span th:text="${username}">User</span>
+  </h1>
+
+  <p>Chào mừng bạn quay lại hệ thống</p>
+
+  <a class="btn btn-profile" href="/user/profile">
+    👤 Hồ sơ của tôi
+  </a>
+  <a th:href="@{/home}">⬅ Quay lại Home</a>
+
+
+  <form th:action="@{/logout}" method="post">
+    <button class="btn btn-logout" type="submit">
+      🚪 Đăng xuất
+    </button>
+  </form>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+</head>
+
+<body>
+
+<div class="admin-wrapper">
+
+  <h1>
+    <i class="fa-solid fa-crown"></i>
+    Admin Control Panel
+  </h1>
+
+  <div class="footer">
+    <form th:action="@{/logout}" method="post">
+      <button type="submit">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        Logout
+      </button>
+    </form>
+  </div>
+
+</div>
+
+</body>
+</html>
