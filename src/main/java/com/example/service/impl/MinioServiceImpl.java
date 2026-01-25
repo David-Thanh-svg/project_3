@@ -74,9 +74,20 @@ public class MinioServiceImpl implements MinioService {
     }
     @Override
     public String uploadPostMedia(Long postId, MultipartFile file) {
+
         try {
-            String ext = file.getOriginalFilename()
-                    .substring(file.getOriginalFilename().lastIndexOf("."));
+
+            if (file == null || file.isEmpty()) {
+                return null;
+            }
+
+            String original = file.getOriginalFilename();
+
+            String ext = "";
+
+            if (original != null && original.contains(".")) {
+                ext = original.substring(original.lastIndexOf("."));
+            }
 
             String objectPath =
                     "posts/" + postId + "/" + UUID.randomUUID() + ext;
@@ -96,5 +107,6 @@ public class MinioServiceImpl implements MinioService {
             throw new RuntimeException("Upload post media failed", e);
         }
     }
+
 
 }

@@ -2,11 +2,9 @@ package com.example.entity;
 
 import com.example.entity.enums.PrivacyLevel;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,7 +21,6 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Tác giả
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User author;
@@ -34,12 +31,13 @@ public class Post {
     @Enumerated(EnumType.STRING)
     private PrivacyLevel privacy = PrivacyLevel.PUBLIC;
 
-    // Repost
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "original_post_id")
     private Post originalPost;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "post",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     private List<PostMedia> media = new ArrayList<>();
 
     @ManyToMany
@@ -51,6 +49,15 @@ public class Post {
     private Set<User> taggedUsers = new HashSet<>();
 
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @OneToMany(mappedBy = "originalPost",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Post> reposts = new ArrayList<>();
+
+
 }
+
 
 

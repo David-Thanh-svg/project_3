@@ -21,4 +21,16 @@ public interface PostService {
 
     List<Post> getFeed(Long viewerId);
 
+    void updatePost(Long postId,
+                    Long userId,
+                    String content,
+                    PrivacyLevel privacy,
+                    List<MultipartFile> newFiles,
+                    List<Long> deleteMediaIds,
+                    List<Long> tagUserIds  );
+
+    Post getPostForEdit(Long postId, Long userId);
+
+
+
 }

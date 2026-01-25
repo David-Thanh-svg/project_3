@@ -11,10 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import com.example.dto.UserDto;
+
+import java.util.List;
+
 
 @Controller
 @RequestMapping("/user")
@@ -31,9 +32,18 @@ public class UserController {
             @AuthenticationPrincipal OidcUser oidcUser,
             Model model
     ) {
+
+        if (oidcUser == null) {
+            return "redirect:/login";
+        }
+
+        String username = oidcUser.getPreferredUsername();
+
         User user = userRepository
-                .findByUsername(oidcUser.getPreferredUsername())
-                .orElseThrow();
+                .findByUsername(username)
+                .orElseGet(() ->
+                        userService.getOrCreateUserFromKeycloak(username)
+                );
 
         model.addAttribute("username", user.getUsername());
 
@@ -44,6 +54,7 @@ public class UserController {
 
         return "user/user-home";
     }
+
     @GetMapping("/edit")
     public String editProfile(OAuth2AuthenticationToken auth, Model model) {
         String username = auth.getPrincipal()
@@ -73,5 +84,16 @@ public class UserController {
         userService.updateProfile(userId, bio, privacy);
         return "redirect:/user/profile";
     }
+    @GetMapping("/users/search")
+    @ResponseBody
+    public List<UserDto> search(@RequestParam String q) {
+
+        return userRepository
+                .findByUsernameContainingIgnoreCase(q)
+                .stream()
+                .map(u -> new UserDto(u.getId(), u.getUsername()))
+                .toList();
+    }
+
 
 }

@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -38,14 +41,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getOrCreateUserFromKeycloak(String username) {
+
         return userRepository.findByUsername(username)
                 .orElseGet(() -> {
+
                     User u = new User();
                     u.setUsername(username);
-                    u.setPrivacy(PrivacyLevel.PUBLIC);
+
+                    // ✅ BẮT BUỘC
+                    u.setKeycloakId(username); // hoặc auth.getName()
+
+                    u.setCreatedAt(LocalDateTime.now());
+
                     return userRepository.save(u);
                 });
     }
+
+
 
 
     @Override
@@ -128,6 +140,11 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
     }
+    @Override
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
+
 
 
 }

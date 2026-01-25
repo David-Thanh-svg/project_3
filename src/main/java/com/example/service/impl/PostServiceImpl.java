@@ -5,12 +5,14 @@ import com.example.entity.PostMedia;
 import com.example.entity.User;
 import com.example.entity.enums.MediaType;
 import com.example.entity.enums.PrivacyLevel;
+import com.example.repository.PostMediaRepository;
 import com.example.repository.PostRepository;
 import com.example.repository.UserRepository;
 import com.example.service.MinioService;
 import com.example.service.PostService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,6 +27,8 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final MinioService minioService;
+    private final PostMediaRepository postMediaRepository; // ✅ THÊM
+
 
     @Override
     public Post createPost(Long userId,
@@ -48,25 +52,34 @@ public class PostServiceImpl implements PostService {
 
         postRepository.save(post);
 
-        if (files != null && !files.isEmpty()) {
-            for (MultipartFile file : files) {
-                if (file.isEmpty()) continue;
+        if (files != null) {
+            for (MultipartFile f : files) {
 
-                String path = minioService.uploadPostMedia(userId, file);
+                if (f == null || f.isEmpty()) continue;
+
+                String path =
+                        minioService.uploadPostMedia(post.getId(), f);
+
+                if (path == null) continue;
 
                 PostMedia media = new PostMedia();
-                media.setMediaPath(path);
-                media.setType(
-                        file.getContentType() != null &&
-                                file.getContentType().startsWith("video")
-                                ? MediaType.VIDEO
-                                : MediaType.IMAGE
-                );
                 media.setPost(post);
+                media.setMediaPath(path);
+
+                String contentType = f.getContentType();
+
+                if (contentType != null && contentType.startsWith("video")) {
+                    media.setType(MediaType.VIDEO);
+                } else {
+                    media.setType(MediaType.IMAGE);
+                }
 
                 post.getMedia().add(media);
+                postMediaRepository.save(media);
             }
         }
+
+
 
         return post;
     }
@@ -105,6 +118,104 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<Post> getFeed(Long viewerId) {
         return postRepository.findFeed(viewerId);
+    }
+
+    @Transactional
+    @Override
+    public void updatePost(Long postId,
+                           Long userId,
+                           String content,
+                           PrivacyLevel privacy,
+                           List<MultipartFile> newFiles,
+                           List<Long> deleteMediaIds,
+                           List<Long> tagUserIds   ) {
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow();
+
+        if (!post.getAuthor().getId().equals(userId)) {
+            throw new RuntimeException("Không có quyền sửa post");
+        }
+
+
+        post.setContent(content);
+        post.setPrivacy(privacy);
+
+        // 🏷 cập nhật tag users
+        if (tagUserIds != null) {
+
+            post.getTaggedUsers().clear();
+
+            List<User> tagged =
+                    userRepository.findAllById(tagUserIds);
+
+            post.getTaggedUsers().addAll(tagged);
+        }
+
+
+        // ❌ xoá media
+        if (deleteMediaIds != null) {
+
+            for (Long mediaId : deleteMediaIds) {
+
+                PostMedia media =
+                        postMediaRepository.findById(mediaId)
+                                .orElseThrow();
+
+                if (!media.getPost().getId().equals(postId)) {
+                    throw new AccessDeniedException("Not owner");
+                }
+
+                minioService.deleteObject(media.getMediaPath());
+
+                post.getMedia().remove(media);
+                postMediaRepository.delete(media);
+            }
+        }
+
+
+
+        // ➕ thêm ảnh mới
+        if (newFiles != null) {
+            for (MultipartFile file : newFiles) {
+
+                if (file == null || file.isEmpty()) continue;
+
+                String path =
+                        minioService.uploadPostMedia(postId, file);
+
+                if (path == null) continue;
+
+                PostMedia media = new PostMedia();
+                media.setPost(post);
+                media.setMediaPath(path);
+
+                String contentType = file.getContentType();
+
+                if (contentType != null && contentType.startsWith("video")) {
+                    media.setType(MediaType.VIDEO);
+                } else {
+                    media.setType(MediaType.IMAGE);
+                }
+
+                post.getMedia().add(media);
+                postMediaRepository.save(media);
+            }
+        }
+
+    }
+    @Override
+    public Post getPostForEdit(Long postId, Long userId) {
+
+        Post post = postRepository.findByIdWithMedia(postId)
+                .orElseThrow(() ->
+                        new RuntimeException("Post không tồn tại"));
+
+        if (!post.getAuthor().getId().equals(userId)) {
+            throw new RuntimeException("Không có quyền sửa");
+        }
+
+        return post;
     }
 
 }

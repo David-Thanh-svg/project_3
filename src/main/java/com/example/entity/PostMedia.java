@@ -17,13 +17,14 @@ public class PostMedia {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String mediaPath; // path MinIO
+    private String mediaPath;
 
     @Enumerated(EnumType.STRING)
-    private MediaType type; // IMAGE / VIDEO
+    private MediaType type;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
 }
+
 

@@ -1,39 +1,350 @@
-<form th:action="@{/posts/create}"
-      method="post"
-      enctype="multipart/form-data"
-      style="margin-bottom: 20px">
+<style>
+  /* ===== POST BOX ===== */
+  .post-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+  }
 
-    <textarea name="content"
-              placeholder="Bạn đang nghĩ gì?"
-              required
-              style="width:100%; height:80px"></textarea>
+  .post-box textarea {
+      width: 100%;
+      border: none;
+      resize: none;
+      font-size: 15px;
+      outline: none;
+  }
 
-  <select name="privacy" required>
-    <option value="PUBLIC">Công khai</option>
-    <option value="FRIENDS">Bạn bè</option>
-    <option value="PRIVATE">Chỉ mình tôi</option>
-  </select>
+  .post-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      align-items: center;
+  }
 
-  <input type="file"
-         name="files"
-         multiple />
+  .post-actions select {
+      padding: 6px 10px;
+      border-radius: 6px;
+  }
 
-  <button type="submit">Đăng bài</button>
+  .post-actions input[type=file] {
+      font-size: 13px;
+  }
 
-  <div th:each="post : ${posts}">
-    <h4 th:text="${post.author.username}"></h4>
-    <p th:text="${post.content}"></p>
+  .post-actions button {
+      background: #1877f2;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+  }
 
-    <div th:each="m : ${post.media}">
-      <img th:if="${m.type.name() == 'IMAGE'}"
-           th:src="${minio.getPresignedUrl(m.mediaPath)}"
-           width="300"/>
+  .post-actions button:hover {
+      background: #145fd1;
+  }
 
-      <video th:if="${m.type.name() == 'VIDEO'}"
-             controls width="300">
-        <source th:src="${minio.getPresignedUrl(m.mediaPath)}"/>
-      </video>
+  /* ===== FEED ===== */
+  .feed {
+      max-width: 600px;
+      margin: auto;
+  }
+
+  .post-card {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.1);
+  }
+
+  .post-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+  }
+
+  .post-header strong {
+      margin-left: 8px;
+  }
+
+  .post-content {
+      margin: 10px 0;
+      font-size: 15px;
+  }
+
+  .post-media img,
+  .post-media video {
+      border-radius: 8px;
+      margin-top: 8px;
+      max-width: 100%;
+  }
+
+  /* ===== REPOST ===== */
+  .repost-box {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+      margin-top: 8px;
+  }
+
+</style>
+
+
+<div class="feed">
+
+  <!-- EDIT MODAL -->
+  <div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4)">
+    <div style="background:#fff;width:400px;margin:10% auto;padding:20px;border-radius:12px">
+
+      <h3>Sửa bài viết</h3>
+
+      <form id="editForm" method="post">
+
+      <textarea name="content" id="editContent"
+                style="width:100%;height:80px"></textarea>
+
+        <select name="privacy" id="editPrivacy">
+          <option value="PUBLIC">Công khai</option>
+          <option value="FRIENDS">Bạn bè</option>
+          <option value="PRIVATE">Chỉ mình tôi</option>
+        </select>
+
+        <div style="margin-top:10px;text-align:right">
+          <button type="button" onclick="closeEdit()">Huỷ</button>
+          <button type="submit">Lưu</button>
+        </div>
+
+      </form>
     </div>
   </div>
 
-</form>
+
+  <!-- REPOST MODAL -->
+  <div id="repostModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4)">
+    <div style="background:#fff;width:400px;margin:10% auto;padding:20px;border-radius:12px">
+
+      <h3>Chia sẻ bài viết</h3>
+
+      <form id="repostForm" method="post">
+
+      <textarea name="content"
+                placeholder="Viết gì đó..."
+                style="width:100%;height:60px"></textarea>
+
+        <div style="margin-top:10px;text-align:right">
+          <button type="button" onclick="closeRepost()">Huỷ</button>
+          <button type="submit">Chia sẻ</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+
+  <!-- CREATE POST -->
+  <form class="post-box"
+        th:action="@{/posts/create}"
+        method="post"
+        enctype="multipart/form-data">
+
+  <textarea name="content"
+            placeholder="Bạn đang nghĩ gì?"
+            required></textarea>
+
+    <!-- TAG -->
+    <div style="margin-top:6px">
+
+      <input type="text"
+             id="tagSearch"
+             placeholder="Tag bạn bè..."
+             autocomplete="off"
+             style="width:100%;padding:6px"/>
+
+      <div id="tagResultBox"></div>
+
+      <div id="selectedTags"
+           style="margin-top:6px"></div>
+
+      <input type="hidden"
+             name="tagUserIds"
+             id="tagUserIds"/>
+
+    </div>
+
+    <div class="post-actions">
+
+      <select name="privacy" required>
+        <option value="PUBLIC">🌍 Công khai</option>
+        <option value="FRIENDS">👥 Bạn bè</option>
+        <option value="PRIVATE">🔒 Chỉ mình tôi</option>
+      </select>
+
+      <input type="file" name="files" multiple/>
+
+      <button type="submit">Đăng bài</button>
+    </div>
+
+  </form>
+
+
+
+  <!-- POSTS -->
+  <div th:each="post : ${posts}" class="post-card">
+    <form th:action="@{/posts/{id}/edit(id=${post.id})}" method="get">
+      <button type="submit">✏ Sửa</button>
+    </form>
+
+    <button onclick="openRepost([[${post.id}]])">
+      🔁 Chia sẻ
+    </button>
+
+
+    <div class="post-header">
+      <strong th:text="${post.author.username}"></strong>
+      <span style="margin-left:auto;font-size:12px;color:#777"
+            th:text="${#temporals.format(post.createdAt,'HH:mm dd/MM/yyyy')}"></span>
+    </div>
+
+    <div class="post-content"
+         th:text="${post.content}">
+    </div>
+
+    <!-- MEDIA -->
+    <div class="post-media" th:each="m : ${post.media}">
+
+      <img th:if="${m.type.name() == 'IMAGE'}"
+           th:src="${minio.getPresignedUrl(m.mediaPath)}"/>
+
+      <video th:if="${m.type.name() == 'VIDEO'}"
+             controls>
+        <source th:src="${minio.getPresignedUrl(m.mediaPath)}"/>
+      </video>
+    </div>
+
+    <!-- REPOST -->
+    <div th:if="${post.originalPost != null}"
+         class="repost-box">
+
+      <strong>🔁 Repost</strong>
+      <p th:text="${post.originalPost.content}"></p>
+    </div>
+
+    <!-- ACTIONS -->
+    <div style="margin-top:10px">
+
+      <form th:action="@{/posts/{id}/delete(id=${post.id})}"
+            method="post">
+        <button type="submit">Xoá</button>
+      </form>
+
+    </div>
+
+  </div>
+  <script>
+    function openEdit(id, content, privacy) {
+        document.getElementById("editModal").style.display = "block";
+        document.getElementById("editContent").value = content;
+        document.getElementById("editPrivacy").value = privacy;
+
+        document.getElementById("editForm").action = "/posts/" + id + "/edit";
+    }
+
+    function closeEdit() {
+        document.getElementById("editModal").style.display = "none";
+    }
+
+    function openRepost(id) {
+        document.getElementById("repostModal").style.display = "block";
+        document.getElementById("repostForm").action = "/posts/" + id + "/repost";
+    }
+
+    function closeRepost() {
+        document.getElementById("repostModal").style.display = "none";
+    }
+    let selectedTags = [];
+
+document.getElementById("tagSearch")?.addEventListener("input", async e => {
+
+    let q = e.target.value;
+    if (q.length < 2) return;
+
+    let res = await fetch("/users/search?q=" + q);
+    let users = await res.json();
+
+    let box = document.getElementById("tagResultBox");
+    box.innerHTML = "";
+
+    users.forEach(u => {
+        let div = document.createElement("div");
+        div.innerText = u.username;
+        div.style.cursor = "pointer";
+        div.onclick = () => addTag(u.id, u.username);
+        box.appendChild(div);
+    });
+});
+
+function addTag(id, name) {
+
+    if (selectedTags.includes(id)) return;
+
+    selectedTags.push(id);
+
+    let tag = document.createElement("span");
+    tag.innerHTML = name + " ❌";
+    tag.style.marginRight = "6px";
+
+    tag.onclick = () => {
+        selectedTags = selectedTags.filter(x => x !== id);
+        tag.remove();
+        syncTags();
+    };
+
+    document.getElementById("selectedTags").appendChild(tag);
+    syncTags();
+}
+
+function syncTags() {
+    document.getElementById("tagUserIds").value = selectedTags.join(",");
+}
+    function openEdit(id, content, privacy, tags) {
+
+    document.getElementById("editModal").style.display = "block";
+
+    document.getElementById("editContent").value = content;
+    document.getElementById("editPrivacy").value = privacy;
+
+    selectedTags = tags.map(t => t.id);
+    syncEditTags(tags);
+
+    document.getElementById("editForm").action =
+        "/posts/" + id + "/edit";
+}
+
+function syncEditTags(tags) {
+
+    let box = document.getElementById("editTagBox");
+    box.innerHTML = "";
+
+    tags.forEach(u => {
+        let span = document.createElement("span");
+        span.innerHTML = u.username + " ❌";
+        span.onclick = () => removeEditTag(u.id);
+        box.appendChild(span);
+    });
+
+    document.getElementById("editTagIds").value =
+        tags.map(t => t.id).join(",");
+}
+
+function removeEditTag(id) {
+    selectedTags = selectedTags.filter(x => x !== id);
+    document.getElementById("editTagIds").value =
+        selectedTags.join(",");
+}
+
+  </script>
+
+</div>

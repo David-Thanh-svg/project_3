@@ -1,8 +1,11 @@
 package com.example.controller.user;
 
+import com.example.entity.Post;
 import com.example.entity.enums.PrivacyLevel;
 import com.example.service.PostService;
 import com.example.service.UserService;
+import org.springframework.security.core.Authentication;
+import org.springframework.ui.Model;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
@@ -59,14 +62,77 @@ public class PostController {
     }
 
     @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id,
-                         OAuth2AuthenticationToken auth) {
+    public String deletePost(@PathVariable Long id,
+                             OAuth2AuthenticationToken authentication) {
+
+        String username =
+                authentication.getPrincipal()
+                        .getAttribute("preferred_username");
+
+        Long userId = userService.getUserIdByUsername(username);
+
+        postService.deletePost(id, userId);
+
+        return "redirect:/home";
+    }
+    @GetMapping("/{id}/edit")
+    public String showEditForm(@PathVariable Long id,
+                               Model model,
+                               OAuth2AuthenticationToken auth) {
 
         Long userId = userService.getUserIdByUsername(
                 auth.getPrincipal().getAttribute("preferred_username")
         );
 
-        postService.deletePost(id, userId);
-        return "redirect:/feed";
+        Post post = postService.getPostForEdit(id, userId);
+
+        model.addAttribute("post", post);
+        model.addAttribute("allUsers", userService.findAll());
+
+        return "post/edit";
     }
+
+
+
+    @PostMapping("/{id}/edit")
+    public String editPost(@PathVariable Long id,
+
+                           @RequestParam String content,
+
+                           @RequestParam PrivacyLevel privacy,
+
+                           @RequestParam(required = false)
+                           List<Long> tagUserIds,
+
+                           @RequestParam(required = false)
+                           List<Long> deleteMediaIds,
+
+                           @RequestParam(required = false)
+                           List<MultipartFile> newFiles,
+
+                           Authentication authentication
+    ) {
+
+        String username = authentication.getName();
+
+        Long userId =
+                userService.getUserIdByUsername(username);
+
+        postService.updatePost(
+                id,
+                userId,
+                content,
+                privacy,
+                newFiles,
+                deleteMediaIds,
+                tagUserIds
+        );
+
+        return "redirect:/home";
+    }
+
+
+
+
+
 }

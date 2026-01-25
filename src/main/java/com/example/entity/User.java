@@ -29,6 +29,10 @@ public class User {
 
     private String avatarPath;
 
+    @Column(name = "keycloak_id", unique = true)
+    private String keycloakId;
+
+
     @Enumerated(EnumType.STRING)
     private PrivacyLevel privacy = PrivacyLevel.PUBLIC;
 
