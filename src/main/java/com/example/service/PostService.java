@@ -15,7 +15,7 @@ public interface PostService {
 
     void deletePost(Long postId, Long userId);
 
-    Post repost(Long userId, Long postId, String content);
+    void repost(Long userId, Long originalPostId, String content);
 
     List<Post> getMyPosts(Long userId);
 
@@ -30,7 +30,6 @@ public interface PostService {
                     List<Long> tagUserIds  );
 
     Post getPostForEdit(Long postId, Long userId);
-
 
 
 }

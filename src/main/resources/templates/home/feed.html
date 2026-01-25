@@ -129,8 +129,12 @@
       <h3>Chia sẻ bài viết</h3>
 
       <form id="repostForm" method="post">
+        <input type="hidden"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}">
 
-      <textarea name="content"
+
+        <textarea name="content"
                 placeholder="Viết gì đó..."
                 style="width:100%;height:60px"></textarea>
 
@@ -189,60 +193,85 @@
 
   </form>
 
-
-
   <!-- POSTS -->
   <div th:each="post : ${posts}" class="post-card">
+
+    <!-- REPOST PREVIEW -->
+    <div th:if="${post.originalPost != null}"
+         class="repost-box">
+
+      <strong>🔁 Đã chia sẻ</strong>
+
+      <div class="repost-inner">
+
+        <strong th:text="${post.originalPost.author.username}"></strong>
+
+        <p th:text="${post.originalPost.content}"></p>
+
+        <!-- MEDIA GỐC -->
+        <div class="post-media"
+             th:each="m : ${post.originalPost.media}">
+
+          <img th:if="${m.type.name() == 'IMAGE'}"
+               th:src="${minio.getPresignedUrl(m.mediaPath)}"/>
+
+          <video th:if="${m.type.name() == 'VIDEO'}" controls>
+            <source th:src="${minio.getPresignedUrl(m.mediaPath)}"/>
+          </video>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ACTION -->
     <form th:action="@{/posts/{id}/edit(id=${post.id})}" method="get">
       <button type="submit">✏ Sửa</button>
     </form>
 
-    <button onclick="openRepost([[${post.id}]])">
+    <button type="button"
+            th:onclick="|openRepost(${post.id})|">
       🔁 Chia sẻ
     </button>
+    <form th:action="@{/posts/{id}/delete(id=${post.id})}"
+          method="post"
+          onsubmit="return confirm('Xoá bài viết này?')">
 
+      <input type="hidden"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}"/>
 
+      <button type="submit"
+              style="background:#ff4d4d;color:white">
+        🗑 Xoá
+      </button>
+    </form>
+
+    <!-- HEADER -->
     <div class="post-header">
       <strong th:text="${post.author.username}"></strong>
       <span style="margin-left:auto;font-size:12px;color:#777"
             th:text="${#temporals.format(post.createdAt,'HH:mm dd/MM/yyyy')}"></span>
     </div>
 
+    <!-- CONTENT -->
     <div class="post-content"
          th:text="${post.content}">
     </div>
 
     <!-- MEDIA -->
     <div class="post-media" th:each="m : ${post.media}">
-
       <img th:if="${m.type.name() == 'IMAGE'}"
            th:src="${minio.getPresignedUrl(m.mediaPath)}"/>
 
-      <video th:if="${m.type.name() == 'VIDEO'}"
-             controls>
+      <video th:if="${m.type.name() == 'VIDEO'}" controls>
         <source th:src="${minio.getPresignedUrl(m.mediaPath)}"/>
       </video>
     </div>
 
-    <!-- REPOST -->
-    <div th:if="${post.originalPost != null}"
-         class="repost-box">
-
-      <strong>🔁 Repost</strong>
-      <p th:text="${post.originalPost.content}"></p>
-    </div>
-
-    <!-- ACTIONS -->
-    <div style="margin-top:10px">
-
-      <form th:action="@{/posts/{id}/delete(id=${post.id})}"
-            method="post">
-        <button type="submit">Xoá</button>
-      </form>
-
-    </div>
-
   </div>
+
+
   <script>
     function openEdit(id, content, privacy) {
         document.getElementById("editModal").style.display = "block";

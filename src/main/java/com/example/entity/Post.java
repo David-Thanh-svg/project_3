@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -38,7 +36,7 @@ public class Post {
     @OneToMany(mappedBy = "post",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
-    private List<PostMedia> media = new ArrayList<>();
+    private Set<PostMedia> media = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -52,9 +50,9 @@ public class Post {
 
     @OneToMany(mappedBy = "originalPost",
             cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    private List<Post> reposts = new ArrayList<>();
+            orphanRemoval = true)
+    private Set<Post> reposts = new HashSet<>();
+
 
 
 }

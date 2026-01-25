@@ -14,25 +14,26 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByAuthorIdOrderByCreatedAtDesc(Long userId);
 
     @Query("""
-         select distinct p from Post p
-         left join fetch p.media
-         left join fetch p.taggedUsers
-         join fetch p.author a
-         where
-             p.privacy = 'PUBLIC'
-             or (p.privacy = 'FRIENDS'
-                 and exists (
-                     select 1 from User u
-                     join u.followers f
-                     where u = p.author and f.id = :viewerId
-                 ))
-             or p.author.id = :viewerId
-         order by p.createdAt desc
+        select distinct p from Post p
+        left join fetch p.media
+        left join fetch p.originalPost op
+        left join fetch op.media
+        where
+            p.privacy = 'PUBLIC'
+            or (p.privacy = 'FRIENDS'
+                and exists (
+                    select 1 from User u
+                    join u.followers f
+                    where u = p.author and f.id = :viewerId
+                ))
+            or p.author.id = :viewerId
+        order by p.createdAt desc
         """)
     List<Post> findFeed(@Param("viewerId") Long viewerId);
 
 
-            @Query("""
+
+    @Query("""
             select p from Post p
             left join fetch p.media
             where p.id = :id

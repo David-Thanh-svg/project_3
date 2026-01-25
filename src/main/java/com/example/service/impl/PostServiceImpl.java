@@ -16,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 
@@ -96,18 +97,26 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Post repost(Long userId, Long postId, String content) {
+    @Transactional
+    public void repost(Long userId, Long originalPostId, String content) {
+
         User user = userRepository.findById(userId).orElseThrow();
-        Post original = postRepository.findById(postId).orElseThrow();
+
+        Post originalPost =
+                postRepository.findByIdWithMedia(originalPostId)
+                        .orElseThrow();
 
         Post repost = new Post();
-        repost.setAuthor(user);
-        repost.setContent(content);
-        repost.setOriginalPost(original);
-        repost.setPrivacy(original.getPrivacy());
 
-        return postRepository.save(repost);
+        repost.setAuthor(user);
+        repost.setOriginalPost(originalPost);
+        repost.setContent(content);
+        repost.setPrivacy(PrivacyLevel.PUBLIC);
+        repost.setCreatedAt(LocalDateTime.now());
+
+        postRepository.save(repost);
     }
+
 
     @Override
     public List<Post> getMyPosts(Long userId) {
